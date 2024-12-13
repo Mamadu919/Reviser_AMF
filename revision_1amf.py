@@ -4,9 +4,16 @@ import streamlit as st
 # Titre de l'application
 st.title("Révision pour le Certificat AMF")
 
-# Charger les données directement depuis un fichier intégré
-file_path = "C:\\Users\\DUDU\\Documents\\Programmes\\AMF.xlsx"
-data = pd.read_excel(file_path)
+# Charger les données directement depuis un fichier inclus dans le projet
+file_path = "AMF.xlsx"  # Le fichier doit être à côté de ce script
+try:
+    data = pd.read_excel(file_path, engine="openpyxl")
+except FileNotFoundError:
+    st.error(f"Le fichier {file_path} est introuvable. Assurez-vous qu'il est dans le même dossier que ce script.")
+    st.stop()
+except Exception as e:
+    st.error(f"Une erreur est survenue lors du chargement du fichier : {e}")
+    st.stop()
 
 # Filtrer les questions par catégorie en utilisant l'index de colonne pour 'Categorie'
 category_a = data[data.iloc[:, 3] == 'A']  # Colonne d'index 3 pour la catégorie
