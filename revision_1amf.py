@@ -41,6 +41,8 @@ else:
     used_questions = set()
 
 # Initialiser les états de session
+if 'used_questions' not in st.session_state:
+    st.session_state['used_questions'] = used_questions
 if 'asked_questions' not in st.session_state:
     st.session_state['asked_questions'] = []
 if 'correct_count' not in st.session_state:
