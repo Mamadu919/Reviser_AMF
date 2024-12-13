@@ -104,7 +104,7 @@ def ask_question():
     st.write(f"C) {question.iloc[7]}")
     answer = st.radio("Votre réponse :", ["A", "B", "C"], key=f"question_{question.iloc[0]}")
 
-    if st.button("Valider", key=f"validate_{question.iloc[0]}"):
+    if st.button("Valider", key=f"validate_{st.session_state['question_number']}"):
         is_correct = answer == question.iloc[8]
         if is_correct:
             st.session_state['correct_count'] += 1
@@ -134,7 +134,7 @@ def ask_question():
             st.session_state['responses_c'].append(response_record)
 
         st.session_state['question_number'] += 1
-        st.session_state['current_question'] = None
+        select_next_question()
 
 # Fonction pour terminer l'examen
 def finish_exam():
@@ -159,12 +159,11 @@ def finish_exam():
         save_used_questions()
 
 # Lancer l'examen
-if st.button("Commencer l'examen") or st.session_state.get('current_question') is not None:
-    if st.session_state['current_question'] is None:
-        select_next_question()
+if st.session_state.get('current_question') is None:
+    select_next_question()
 
-    if st.session_state['current_question'] is not None:
-        ask_question()
+if st.session_state['current_question'] is not None:
+    ask_question()
 
-    if st.button("Terminer l'examen"):
-        finish_exam()
+if st.button("Terminer l'examen"):
+    finish_exam()
