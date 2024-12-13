@@ -7,7 +7,7 @@ st.title("Révision pour le Certificat AMF")
 # Charger les données directement depuis un fichier inclus dans le projet
 file_path = "AMF.csv"  # Le fichier doit être dans le même dossier
 try:
-    data = pd.read_csv(file_path, encoding="ISO-8859-1")  # Utilise un encodage compatible
+    data = pd.read_csv(file_path, encoding="ISO-8859-1", error_bad_lines=False, delimiter=",")  # Vérification et nettoyage
 except FileNotFoundError:
     st.error(f"Le fichier {file_path} est introuvable. Assurez-vous qu'il est dans le même dossier que ce script.")
     st.stop()
@@ -15,9 +15,17 @@ except Exception as e:
     st.error(f"Une erreur est survenue lors du chargement du fichier : {e}")
     st.stop()
 
+# Vérifier la structure des données
+st.write("Aperçu des données :")
+st.write(data.head())
+
 # Filtrer les questions par catégorie en utilisant l'index de colonne pour 'Categorie'
-category_a = data[data.iloc[:, 3] == 'A']  # Colonne d'index 3 pour la catégorie
-category_c = data[data.iloc[:, 3] == 'C']
+try:
+    category_a = data[data.iloc[:, 3] == 'A']  # Colonne d'index 3 pour la catégorie
+    category_c = data[data.iloc[:, 3] == 'C']
+except IndexError:
+    st.error("Les colonnes attendues dans le fichier sont manquantes ou mal formatées.")
+    st.stop()
 
 # Liste pour garder en mémoire les questions posées et le score
 if 'asked_questions' not in st.session_state:
