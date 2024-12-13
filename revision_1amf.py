@@ -159,7 +159,7 @@ def finish_exam():
         save_used_questions()
 
 # Lancer l'examen
-if st.button("Commencer l'examen") or st.session_state.get('current_question'):
+if st.button("Commencer l'examen") or st.session_state.get('current_question') is not None:
     if st.session_state['current_question'] is None:
         select_next_question()
 
