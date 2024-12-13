@@ -5,9 +5,9 @@ import streamlit as st
 st.title("Révision pour le Certificat AMF")
 
 # Charger les données directement depuis un fichier inclus dans le projet
-file_path = "AMF.csv"  # Assurez-vous que le fichier CSV est à côté de ce script
+file_path = "AMF.csv"  # Le fichier doit être dans le même dossier
 try:
-    data = pd.read_csv(file_path)  # Utilisation de read_csv au lieu de read_excel
+    data = pd.read_csv(file_path, encoding="ISO-8859-1")  # Utilise un encodage compatible
 except FileNotFoundError:
     st.error(f"Le fichier {file_path} est introuvable. Assurez-vous qu'il est dans le même dossier que ce script.")
     st.stop()
