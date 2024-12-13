@@ -144,6 +144,34 @@ def finish_exam():
     st.write(f"- Catégorie C : {st.session_state['correct_c']} bonnes réponses sur 87")
     st.write(f"Score total : {st.session_state['correct_count']} bonnes réponses sur 120")
 
+    st.write("**Détails des réponses**")
+
+    st.write("**Catégorie A**")
+    for response in st.session_state['responses_a']:
+        st.write(f"Question: {response['question']}")
+        st.write(f"A) {response['choices']['A']}")
+        st.write(f"B) {response['choices']['B']}")
+        st.write(f"C) {response['choices']['C']}")
+        st.write(f"Votre réponse: {response['your_answer']} - Réponse correcte: {response['correct_answer']}")
+        if response['is_correct']:
+            st.success("Bonne réponse")
+        else:
+            st.error("Mauvaise réponse")
+        st.write("---")
+
+    st.write("**Catégorie C**")
+    for response in st.session_state['responses_c']:
+        st.write(f"Question: {response['question']}")
+        st.write(f"A) {response['choices']['A']}")
+        st.write(f"B) {response['choices']['B']}")
+        st.write(f"C) {response['choices']['C']}")
+        st.write(f"Votre réponse: {response['your_answer']} - Réponse correcte: {response['correct_answer']}")
+        if response['is_correct']:
+            st.success("Bonne réponse")
+        else:
+            st.error("Mauvaise réponse")
+        st.write("---")
+
     if st.button("Faire un autre examen blanc"):
         st.session_state['asked_questions'] = []
         st.session_state['correct_count'] = 0
