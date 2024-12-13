@@ -1,8 +1,18 @@
 import pandas as pd
 import streamlit as st
+import os
+import json
 
 # Titre de l'application
 st.title("Révision pour le Certificat AMF")
+
+# Demander un nom d'utilisateur
+username = st.text_input("Entrez votre nom d'utilisateur :")
+if not username:
+    st.stop()
+
+# Générer un fichier spécifique pour l'utilisateur
+used_questions_file = f"used_questions_{username}.json"
 
 # Charger les données directement depuis un fichier inclus dans le projet
 file_path = "AMF.csv"  # Le fichier doit être dans le même dossier
@@ -27,6 +37,13 @@ except IndexError:
     st.error("Les colonnes attendues dans le fichier sont manquantes ou mal formatées.")
     st.stop()
 
+# Charger les questions déjà utilisées depuis un fichier JSON spécifique à l'utilisateur
+if os.path.exists(used_questions_file):
+    with open(used_questions_file, "r") as f:
+        used_questions = set(json.load(f))
+else:
+    used_questions = set()
+
 # Liste pour garder en mémoire les questions posées et le score
 if 'asked_questions' not in st.session_state:
     st.session_state['asked_questions'] = []
@@ -49,7 +66,12 @@ if 'current_category' not in st.session_state:
 
 # Marquer les questions déjà utilisées comme mémorisées
 if 'used_questions' not in st.session_state:
-    st.session_state['used_questions'] = set()
+    st.session_state['used_questions'] = used_questions
+
+# Fonction pour sauvegarder les questions utilisées
+def save_used_questions():
+    with open(used_questions_file, "w") as f:
+        json.dump(list(st.session_state['used_questions']), f)
 
 # Fonction pour sélectionner des questions aléatoires
 def select_questions(category, num_questions):
@@ -80,6 +102,7 @@ def ask_question():
                 st.session_state['correct_c'] += 1
         st.session_state['asked_questions'].append(question.iloc[0])  # Colonne d'index 0 pour 'ID question'
         st.session_state['used_questions'].add(question.iloc[0])
+        save_used_questions()
         response_record = {
             "question": question.iloc[4],
             "choices": {
