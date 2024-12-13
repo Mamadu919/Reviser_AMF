@@ -82,6 +82,11 @@ def ask_question():
         st.session_state['used_questions'].add(question.iloc[0])
         response_record = {
             "question": question.iloc[4],
+            "choices": {
+                "A": question.iloc[5],
+                "B": question.iloc[6],
+                "C": question.iloc[7]
+            },
             "your_answer": answer,
             "correct_answer": question.iloc[8],
             "is_correct": is_correct
@@ -124,6 +129,9 @@ def finish_exam():
     st.write("\n**Catégorie A**")
     for response in st.session_state['responses_a']:
         st.write(f"Question: {response['question']}")
+        st.write(f"A) {response['choices']['A']}")
+        st.write(f"B) {response['choices']['B']}")
+        st.write(f"C) {response['choices']['C']}")
         st.write(f"Votre réponse: {response['your_answer']} - Réponse correcte: {response['correct_answer']}")
         if response['is_correct']:
             st.success("Bonne réponse")
@@ -134,6 +142,9 @@ def finish_exam():
     st.write("\n**Catégorie C**")
     for response in st.session_state['responses_c']:
         st.write(f"Question: {response['question']}")
+        st.write(f"A) {response['choices']['A']}")
+        st.write(f"B) {response['choices']['B']}")
+        st.write(f"C) {response['choices']['C']}")
         st.write(f"Votre réponse: {response['your_answer']} - Réponse correcte: {response['correct_answer']}")
         if response['is_correct']:
             st.success("Bonne réponse")
