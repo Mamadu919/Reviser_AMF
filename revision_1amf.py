@@ -76,47 +76,47 @@ if not st.session_state['shuffled_questions']:
 
 # Fonction pour poser une question
 def ask_question():
-    if st.session_state['question_number'] <= 120:
+    if st.session_state['question_number'] <= len(st.session_state['shuffled_questions']):
         question = st.session_state['shuffled_questions'][st.session_state['question_number'] - 1]
 
-        st.write(f"**Question {st.session_state['question_number']}: {question['Question']}**")
-        st.write(f"A) {question['ChoixA']}")
-        st.write(f"B) {question['ChoixB']}")
-        st.write(f"C) {question['ChoixC']}")
+        st.write(f"**Question {st.session_state['question_number']}: {question.get('Question', 'Question manquante')}**")
+        st.write(f"A) {question.get('ChoixA', 'Option manquante')}")
+        st.write(f"B) {question.get('ChoixB', 'Option manquante')}")
+        st.write(f"C) {question.get('ChoixC', 'Option manquante')}")
         answer = st.radio("Votre réponse :", ["A", "B", "C"], key=f"question_{st.session_state['question_number']}")
 
         if st.button("Valider", key=f"validate_{st.session_state['question_number']}"):
-            is_correct = answer == question['BonneRéponse']
+            is_correct = answer == question.get('BonneRéponse', '')
             if is_correct:
                 st.session_state['correct_count'] += 1
-                if question['Categorie'] == 'A':
+                if question.get('Categorie') == 'A':
                     st.session_state['correct_a'] += 1
-                elif question['Categorie'] == 'C':
+                elif question.get('Categorie') == 'C':
                     st.session_state['correct_c'] += 1
 
-            st.session_state['asked_questions'].append(question['ID'])
-            st.session_state['used_questions'].add(question['ID'])
+            st.session_state['asked_questions'].append(question.get('ID', 'ID manquant'))
+            st.session_state['used_questions'].add(question.get('ID', 'ID manquant'))
             save_used_questions()
 
             response_record = {
-                "question": question['Question'],
+                "question": question.get('Question', 'Question manquante'),
                 "choices": {
-                    "A": question['ChoixA'],
-                    "B": question['ChoixB'],
-                    "C": question['ChoixC']
+                    "A": question.get('ChoixA', 'Option manquante'),
+                    "B": question.get('ChoixB', 'Option manquante'),
+                    "C": question.get('ChoixC', 'Option manquante')
                 },
                 "your_answer": answer,
-                "correct_answer": question['BonneRéponse'],
+                "correct_answer": question.get('BonneRéponse', 'Réponse manquante'),
                 "is_correct": is_correct
             }
-            if question['Categorie'] == 'A':
+            if question.get('Categorie') == 'A':
                 st.session_state['responses_a'].append(response_record)
-            elif question['Categorie'] == 'C':
+            elif question.get('Categorie') == 'C':
                 st.session_state['responses_c'].append(response_record)
 
             st.session_state['question_number'] += 1
 
-            if st.session_state['question_number'] > 120:
+            if st.session_state['question_number'] > len(st.session_state['shuffled_questions']):
                 finish_exam()
 
 # Fonction pour terminer l'examen
@@ -125,7 +125,7 @@ def finish_exam():
     st.write(f"**Résultats :**")
     st.write(f"- Catégorie A : {st.session_state['correct_a']} bonnes réponses sur 33")
     st.write(f"- Catégorie C : {st.session_state['correct_c']} bonnes réponses sur 87")
-    st.write(f"- **Score total** : {st.session_state['correct_count']} bonnes réponses sur 120")
+    st.write(f"- **Score total** : {st.session_state['correct_count']} bonnes réponses sur {len(st.session_state['shuffled_questions'])}")
 
     if st.button("Faire un autre examen blanc"):
         st.session_state['asked_questions'] = []
@@ -144,7 +144,7 @@ def save_used_questions():
         json.dump(list(st.session_state['used_questions']), f)
 
 # Lancer l'examen
-if st.session_state['question_number'] <= 120:
+if st.session_state['question_number'] <= len(st.session_state['shuffled_questions']):
     ask_question()
 else:
     finish_exam()
