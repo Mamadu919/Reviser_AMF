@@ -19,7 +19,7 @@ used_questions_file = f"used_questions_{username}.json"
 file_path = "AMF.csv"  # Le fichier doit être dans le même dossier
 try:
     data = pd.read_csv(file_path, encoding="ISO-8859-1", on_bad_lines="skip", delimiter=";")
-    # Vérification des colonnes nécessaires
+    # Vérifier que toutes les colonnes nécessaires sont présentes
     required_columns = ['Categorie', 'Question finale', 'Choix_A', 'Choix_B', 'Choix_C', 'Reponse']
     if not all(col in data.columns for col in required_columns):
         st.error("Les colonnes attendues dans le fichier sont manquantes ou mal formatées.")
