@@ -58,8 +58,6 @@ if 'responses_c' not in st.session_state:
     st.session_state['responses_c'] = []
 if 'question_number' not in st.session_state:
     st.session_state['question_number'] = 1
-if 'current_question_index' not in st.session_state:
-    st.session_state['current_question_index'] = 0
 if 'shuffled_questions' not in st.session_state:
     st.session_state['shuffled_questions'] = []
 
@@ -78,10 +76,10 @@ if not st.session_state['shuffled_questions']:
 
 # Fonction pour poser une question
 def ask_question():
-    if st.session_state['current_question_index'] < len(st.session_state['shuffled_questions']):
-        question = st.session_state['shuffled_questions'][st.session_state['current_question_index']]
+    if st.session_state['question_number'] <= 120:
+        question = st.session_state['shuffled_questions'][st.session_state['question_number'] - 1]
 
-        st.write(f"Question {st.session_state['question_number']}: {question['Question']}")
+        st.write(f"**Question {st.session_state['question_number']}: {question['Question']}**")
         st.write(f"A) {question['ChoixA']}")
         st.write(f"B) {question['ChoixB']}")
         st.write(f"C) {question['ChoixC']}")
@@ -117,17 +115,17 @@ def ask_question():
                 st.session_state['responses_c'].append(response_record)
 
             st.session_state['question_number'] += 1
-            st.session_state['current_question_index'] += 1
-    else:
-        finish_exam()
+
+            if st.session_state['question_number'] > 120:
+                finish_exam()
 
 # Fonction pour terminer l'examen
 def finish_exam():
-    st.write("Examen terminé !")
-    st.write(f"Résultats :")
+    st.write("### Examen terminé !")
+    st.write(f"**Résultats :**")
     st.write(f"- Catégorie A : {st.session_state['correct_a']} bonnes réponses sur 33")
     st.write(f"- Catégorie C : {st.session_state['correct_c']} bonnes réponses sur 87")
-    st.write(f"Score total : {st.session_state['correct_count']} bonnes réponses sur 120")
+    st.write(f"- **Score total** : {st.session_state['correct_count']} bonnes réponses sur 120")
 
     if st.button("Faire un autre examen blanc"):
         st.session_state['asked_questions'] = []
@@ -137,7 +135,6 @@ def finish_exam():
         st.session_state['responses_a'] = []
         st.session_state['responses_c'] = []
         st.session_state['question_number'] = 1
-        st.session_state['current_question_index'] = 0
         st.session_state['shuffled_questions'] = []
         initialize_questions()
 
@@ -147,7 +144,7 @@ def save_used_questions():
         json.dump(list(st.session_state['used_questions']), f)
 
 # Lancer l'examen
-if st.session_state['current_question_index'] < len(st.session_state['shuffled_questions']):
+if st.session_state['question_number'] <= 120:
     ask_question()
 else:
     finish_exam()
