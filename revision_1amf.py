@@ -47,137 +47,33 @@ if 'asked_questions' not in st.session_state:
     st.session_state['asked_questions'] = []
 if 'correct_count' not in st.session_state:
     st.session_state['correct_count'] = 0
-if 'correct_a' not in st.session_state:
-    st.session_state['correct_a'] = 0
-if 'correct_c' not in st.session_state:
-    st.session_state['correct_c'] = 0
-if 'responses_a' not in st.session_state:
-    st.session_state['responses_a'] = []
-if 'responses_c' not in st.session_state:
-    st.session_state['responses_c'] = []
-if 'question_number' not in st.session_state:
-    st.session_state['question_number'] = 1
-if 'current_question' not in st.session_state:
-    st.session_state['current_question'] = None
-if 'current_category' not in st.session_state:
-    st.session_state['current_category'] = None
-if 'questions' not in st.session_state:
-    st.session_state['questions'] = []
+if 'responses' not in st.session_state:
+    st.session_state['responses'] = []
 
 # Fonction pour sauvegarder les questions utilisées
 def save_used_questions():
     with open(used_questions_file, "w") as f:
         json.dump(list(st.session_state['used_questions']), f)
 
-# Fonction pour tirer 120 questions
-def draw_questions():
-    available_questions_a = category_a[~category_a.iloc[:, 0].isin(st.session_state['used_questions'])]
-    available_questions_c = category_c[~category_c.iloc[:, 0].isin(st.session_state['used_questions'])]
+# Fonction pour sélectionner 120 questions
+def select_questions():
+    available_questions = pd.concat([
+        category_a[~category_a.iloc[:, 0].isin(st.session_state['used_questions'])],
+        category_c[~category_c.iloc[:, 0].isin(st.session_state['used_questions'])]
+    ])
     
-    if len(available_questions_a) + len(available_questions_c) < 120:
-        st.error("Pas assez de questions disponibles pour tirer 120 questions.")
+    if len(available_questions) < 120:
+        st.error("Pas assez de questions disponibles.")
         st.stop()
-
-    questions_a = available_questions_a.sample(n=min(33, len(available_questions_a)), random_state=1)
-    questions_c = available_questions_c.sample(n=min(87, len(available_questions_c)), random_state=1)
     
-    st.session_state['questions'] = pd.concat([questions_a, questions_c]).sample(n=120, random_state=1).reset_index(drop=True)
+    selected_questions = available_questions.sample(n=120, random_state=1)
+    st.session_state['asked_questions'] = selected_questions
+    st.session_state['used_questions'].update(selected_questions.iloc[:, 0].tolist())
+    save_used_questions()
 
-# Fonction pour poser une question
-def ask_question():
-    if st.session_state['question_number'] <= len(st.session_state['questions']):
-        question = st.session_state['questions'].iloc[st.session_state['question_number'] - 1]
-        st.write(f"Question {st.session_state['question_number']}: {question.iloc[4]}")
-        st.write(f"A) {question.iloc[5]}")
-        st.write(f"B) {question.iloc[6]}")
-        st.write(f"C) {question.iloc[7]}")
-        answer = st.radio("Votre réponse :", ["A", "B", "C"], key=f"question_{question.iloc[0]}")
+# Appel de la fonction pour sélectionner les questions
+select_questions()
 
-        if st.button("Valider", key=f"validate_{st.session_state['question_number']}"):
-            is_correct = answer == question.iloc[8]
-            if is_correct:
-                st.session_state['correct_count'] += 1
-                if question.iloc[3] == 'A':
-                    st.session_state['correct_a'] += 1
-                elif question.iloc[3] == 'C':
-                    st.session_state['correct_c'] += 1
-
-            st.session_state['asked_questions'].append(question.iloc[0])
-            st.session_state['used_questions'].add(question.iloc[0])
-            save_used_questions()
-
-            response_record = {
-                "question": question.iloc[4],
-                "choices": {
-                    "A": question.iloc[5],
-                    "B": question.iloc[6],
-                    "C": question.iloc[7]
-                },
-                "your_answer": answer,
-                "correct_answer": question.iloc[8],
-                "is_correct": is_correct
-            }
-            if question.iloc[3] == 'A':
-                st.session_state['responses_a'].append(response_record)
-            elif question.iloc[3] == 'C':
-                st.session_state['responses_c'].append(response_record)
-
-            st.session_state['question_number'] += 1
-
-# Fonction pour terminer l'examen
-def finish_exam():
-    st.write("Examen terminé !")
-    st.write(f"Résultats :")
-    st.write(f"- Catégorie A : {st.session_state['correct_a']} bonnes réponses sur 33")
-    st.write(f"- Catégorie C : {st.session_state['correct_c']} bonnes réponses sur 87")
-    st.write(f"Score total : {st.session_state['correct_count']} bonnes réponses sur 120")
-
-    st.write("**Détails des réponses**")
-
-    st.write("**Catégorie A**")
-    for response in st.session_state['responses_a']:
-        st.write(f"Question: {response['question']}")
-        st.write(f"A) {response['choices']['A']}")
-        st.write(f"B) {response['choices']['B']}")
-        st.write(f"C) {response['choices']['C']}")
-        st.write(f"Votre réponse: {response['your_answer']} - Réponse correcte: {response['correct_answer']}")
-        if response['is_correct']:
-            st.success("Bonne réponse")
-        else:
-            st.error("Mauvaise réponse")
-        st.write("---")
-
-    st.write("**Catégorie C**")
-    for response in st.session_state['responses_c']:
-        st.write(f"Question: {response['question']}")
-        st.write(f"A) {response['choices']['A']}")
-        st.write(f"B) {response['choices']['B']}")
-        st.write(f"C) {response['choices']['C']}")
-        st.write(f"Votre réponse: {response['your_answer']} - Réponse correcte: {response['correct_answer']}")
-        if response['is_correct']:
-            st.success("Bonne réponse")
-        else:
-            st.error("Mauvaise réponse")
-        st.write("---")
-
-    if st.button("Faire un autre examen blanc"):
-        st.session_state['asked_questions'] = []
-        st.session_state['correct_count'] = 0
-        st.session_state['correct_a'] = 0
-        st.session_state['correct_c'] = 0
-        st.session_state['responses_a'] = []
-        st.session_state['responses_c'] = []
-        st.session_state['question_number'] = 1
-        st.session_state['questions'] = []
-        st.session_state['used_questions'] = set()
-        save_used_questions()
-
-# Lancer l'examen
-if st.session_state.get('questions') == []:
-    draw_questions()
-
-if st.session_state['question_number'] <= 120:
-    ask_question()
-
-if st.button("Terminer l'examen"):
-    finish_exam()
+# Afficher les questions
+for index, question in st.session_state['asked_questions'].iterrows():
+    st.write(f"Question {index + 1}: {question.iloc[4]}")  # Affiche la question
