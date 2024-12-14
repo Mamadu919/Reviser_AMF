@@ -74,14 +74,13 @@ if not st.session_state['shuffled_questions']:
 def show_all_questions():
     for i, question in enumerate(st.session_state['shuffled_questions']):
         st.write(f"**Question {i + 1}: {question.get('Question', 'Question manquante')}**")
-        st.write(f"A){question.iloc[5]}")
-    st.write(f"B) {question.iloc[6]}")
-    st.write(f"C) {question.iloc[7]}")
-    
+        st.write(f"A) {question.get('Choix_A', 'Option manquante')}")
+        st.write(f"B) {question.get('Choix_B', 'Option manquante')}")
+        st.write(f"C) {question.get('Choix_C', 'Option manquante')}")
 
         answer = st.radio("Votre réponse :", ["A", "B", "C"], key=f"question_{i + 1}")
 
-        is_correct = answer == question.get('BonneRéponse', '')
+        is_correct = answer == question.get('Reponse', '')
         if is_correct:
             st.session_state['correct_count'] += 1
             if question.get('Categorie') == 'A':
@@ -92,12 +91,12 @@ def show_all_questions():
         response_record = {
             "question": question.get('Question', 'Question manquante'),
             "choices": {
-                "A": question.iloc[5],
-                "B": question.iloc[6],
-                "C": question.iloc[7]
-
+                "A": question.get('Choix_A', 'Option manquante'),
+                "B": question.get('Choix_B', 'Option manquante'),
+                "C": question.get('Choix_C', 'Option manquante')
+            },
             "your_answer": answer,
-            "correct_answer": question.get('BonneRéponse', 'Réponse manquante'),
+            "correct_answer": question.get('Reponse', 'Réponse manquante'),
             "is_correct": is_correct
         }
         if question.get('Categorie') == 'A':
