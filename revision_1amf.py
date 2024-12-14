@@ -54,8 +54,6 @@ if 'responses_a' not in st.session_state:
     st.session_state['responses_a'] = []
 if 'responses_c' not in st.session_state:
     st.session_state['responses_c'] = []
-if 'question_number' not in st.session_state:
-    st.session_state['question_number'] = 1
 if 'shuffled_questions' not in st.session_state:
     st.session_state['shuffled_questions'] = []
 
@@ -120,7 +118,6 @@ def finish_exam():
         st.session_state['correct_c'] = 0
         st.session_state['responses_a'] = []
         st.session_state['responses_c'] = []
-        st.session_state['question_number'] = 1
         st.session_state['shuffled_questions'] = []
         initialize_questions()
 
