@@ -44,20 +44,14 @@ else:
 # Initialiser les états de session
 if 'used_questions' not in st.session_state:
     st.session_state['used_questions'] = used_questions
+if 'shuffled_questions' not in st.session_state:
+    st.session_state['shuffled_questions'] = []
 if 'correct_count' not in st.session_state:
     st.session_state['correct_count'] = 0
 if 'correct_a' not in st.session_state:
     st.session_state['correct_a'] = 0
 if 'correct_c' not in st.session_state:
     st.session_state['correct_c'] = 0
-if 'responses_a' not in st.session_state:
-    st.session_state['responses_a'] = []
-if 'responses_c' not in st.session_state:
-    st.session_state['responses_c'] = []
-if 'shuffled_questions' not in st.session_state:
-    st.session_state['shuffled_questions'] = []
-if 'answers_ready' not in st.session_state:
-    st.session_state['answers_ready'] = False
 
 # Tirer toutes les questions au démarrage de l'examen
 def initialize_questions():
@@ -72,51 +66,52 @@ def initialize_questions():
 if not st.session_state['shuffled_questions']:
     initialize_questions()
 
-# Fonction pour afficher toutes les questions directement
+# Fonction pour afficher toutes les questions directement avec validation
 def show_all_questions():
-    st.write("### Questions")
+    answers = {}  # Dictionnaire pour stocker les réponses de l'utilisateur
     for i, question in enumerate(st.session_state['shuffled_questions']):
         st.write(f"**Question {i + 1}: {question.get('Question finale', 'Question manquante')}**")
         st.write(f"A) {question.get('Choix_A', 'Option manquante')}")
         st.write(f"B) {question.get('Choix_B', 'Option manquante')}")
         st.write(f"C) {question.get('Choix_C', 'Option manquante')}")
+        answers[i] = st.radio("Votre réponse :", ["A", "B", "C"], key=f"question_{i + 1}")
 
-        st.radio("Votre réponse :", ["A", "B", "C"], key=f"question_{i + 1}")
+    # Validation de toutes les réponses
+    if st.button("Valider toutes les réponses"):
+        correct_count = 0
+        correct_a = 0
+        correct_c = 0
 
-# Fonction pour valider les réponses avant la correction
-def validate_answers():
-    st.write("### Validation des réponses")
-    if st.button("Valider mes réponses"):
-        st.session_state['answers_ready'] = True
+        for i, question in enumerate(st.session_state['shuffled_questions']):
+            is_correct = answers[i] == question.get('Reponse', '')
+            if is_correct:
+                correct_count += 1
+                if question.get('Categorie') == 'A':
+                    correct_a += 1
+                elif question.get('Categorie') == 'C':
+                    correct_c += 1
 
-# Fonction pour afficher les résultats et les corrections
-def show_results():
-    st.write("### Résultats et corrections")
+        st.session_state['correct_count'] = correct_count
+        st.session_state['correct_a'] = correct_a
+        st.session_state['correct_c'] = correct_c
+        finish_exam()
+
+# Fonction pour terminer l'examen
+def finish_exam():
+    st.write("### Examen terminé !")
+    st.write(f"**Résultats :**")
     st.write(f"- Catégorie A : {st.session_state['correct_a']} bonnes réponses sur 33")
     st.write(f"- Catégorie C : {st.session_state['correct_c']} bonnes réponses sur 87")
     st.write(f"- **Score total** : {st.session_state['correct_count']} bonnes réponses sur {len(st.session_state['shuffled_questions'])}")
 
-    st.write("**Détails des réponses :**")
-    for i, question in enumerate(st.session_state['shuffled_questions']):
-        user_answer = st.session_state.get(f"question_{i + 1}", "Non répondu")
-        correct_answer = question.get('Reponse', 'Réponse manquante')
-        st.write(f"**Question {i + 1}: {question.get('Question finale')}**")
-        st.write(f"- Votre réponse : {user_answer}")
-        st.write(f"- Réponse correcte : {correct_answer}")
-        if user_answer == correct_answer:
-            st.success("Bonne réponse")
-            st.session_state['correct_count'] += 1
-            if question.get('Categorie') == 'A':
-                st.session_state['correct_a'] += 1
-            elif question.get('Categorie') == 'C':
-                st.session_state['correct_c'] += 1
-        else:
-            st.error("Mauvaise réponse")
+    if st.button("Faire un autre examen blanc"):
+        st.session_state['used_questions'] = set()
+        st.session_state['shuffled_questions'] = []
+        st.session_state['correct_count'] = 0
+        st.session_state['correct_a'] = 0
+        st.session_state['correct_c'] = 0
+        initialize_questions()
 
 # Lancer l'examen
-if not st.session_state['answers_ready']:
-    if st.button("Commencer l'examen"):
-        show_all_questions()
-        validate_answers()
-else:
-    show_results()
+if st.button("Commencer l'examen"):
+    show_all_questions()
