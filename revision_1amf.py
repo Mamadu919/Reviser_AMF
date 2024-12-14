@@ -60,14 +60,18 @@ def initialize_questions():
     available_a = category_a[~category_a['Question finale'].isin(st.session_state['used_questions'])]
     available_c = category_c[~category_c['Question finale'].isin(st.session_state['used_questions'])]
 
-    questions_a = available_a.sample(n=min(len(available_a), 33), random_state=1).to_dict(orient='records')
-    questions_c = available_c.sample(n=min(len(available_c), 87), random_state=1).to_dict(orient='records')
+    if len(available_a) < 33 or len(available_c) < 87:
+        st.error("Pas assez de questions disponibles dans les catégories.")
+        st.stop()
+
+    questions_a = available_a.sample(n=33, random_state=1).to_dict(orient='records')
+    questions_c = available_c.sample(n=87, random_state=1).to_dict(orient='records')
 
     st.session_state['shuffled_questions'] = random.sample(questions_a + questions_c, len(questions_a + questions_c))
     st.session_state['exam_started'] = True
     st.session_state['exam_finished'] = False
 
-# Fonction pour afficher toutes les questions directement
+# Fonction pour afficher toutes les questions
 def show_all_questions():
     for i, question in enumerate(st.session_state['shuffled_questions']):
         st.write(f"**Question {i + 1}: {question.get('Question finale', 'Question manquante')}**")
@@ -75,29 +79,32 @@ def show_all_questions():
         st.write(f"B) {question.get('Choix_B', 'Option manquante')}")
         st.write(f"C) {question.get('Choix_C', 'Option manquante')}")
 
-        answer = st.radio("Votre réponse :", ["A", "B", "C"], key=f"question_{i + 1}")
-
-        response_record = {
-            "question": question.get('Question finale', 'Question manquante'),
-            "choices": {
-                "A": question.get('Choix_A', 'Option manquante'),
-                "B": question.get('Choix_B', 'Option manquante'),
-                "C": question.get('Choix_C', 'Option manquante')
-            },
-            "your_answer": answer,
-            "correct_answer": question.get('Reponse', 'Réponse manquante'),
-            "is_correct": answer == question.get('Reponse', '')
-        }
-
-        if question.get('Categorie') == 'A' and response_record["is_correct"]:
-            st.session_state['correct_a'] += 1
-        elif question.get('Categorie') == 'C' and response_record["is_correct"]:
-            st.session_state['correct_c'] += 1
-
-        st.session_state['responses'].append(response_record)
+        # Afficher la réponse utilisateur ou permettre une saisie
+        user_answer = st.radio("Votre réponse :", ["A", "B", "C"], key=f"question_{i}")
+        if len(st.session_state['responses']) <= i:
+            st.session_state['responses'].append({
+                "question": question['Question finale'],
+                "choices": {
+                    "A": question['Choix_A'],
+                    "B": question['Choix_B'],
+                    "C": question['Choix_C']
+                },
+                "correct_answer": question['Reponse'],
+                "user_answer": user_answer,
+                "is_correct": user_answer == question['Reponse'],
+                "categorie": question['Categorie']
+            })
 
 # Fonction pour afficher les résultats
 def show_results():
+    for response in st.session_state['responses']:
+        if response['is_correct']:
+            if response['categorie'] == 'A':
+                st.session_state['correct_a'] += 1
+            elif response['categorie'] == 'C':
+                st.session_state['correct_c'] += 1
+
+    st.session_state['correct_count'] = st.session_state['correct_a'] + st.session_state['correct_c']
     st.write("### Résultats de l'examen")
     st.write(f"- **Catégorie A :** {st.session_state['correct_a']} bonnes réponses sur 33.")
     st.write(f"- **Catégorie C :** {st.session_state['correct_c']} bonnes réponses sur 87.")
@@ -114,21 +121,19 @@ def show_results():
         st.error("Désolé, vous n'avez pas réussi. Vous devez atteindre au moins 80% dans chaque catégorie.")
 
     st.write("### Détails des réponses")
-
     for response in st.session_state['responses']:
         st.write(f"**Question :** {response['question']}")
         st.write(f"- A) {response['choices']['A']}")
         st.write(f"- B) {response['choices']['B']}")
         st.write(f"- C) {response['choices']['C']}")
-        st.write(f"- **Votre réponse :** {response['your_answer']} - **Réponse correcte :** {response['correct_answer']}")
+        st.write(f"- **Votre réponse :** {response['user_answer']} - **Réponse correcte :** {response['correct_answer']}")
         if response['is_correct']:
             st.success("Bonne réponse")
         else:
             st.error("Mauvaise réponse")
         st.write("---")
 
-# Fonction pour recommencer
-
+# Fonction pour recommencer l'examen
 def restart_exam():
     st.session_state['exam_started'] = False
     st.session_state['exam_finished'] = False
@@ -138,18 +143,17 @@ def restart_exam():
     st.session_state['responses'] = []
     st.session_state['shuffled_questions'] = []
 
-# Workflow de l'application
+# Workflow principal
 if not st.session_state['exam_started']:
     if st.button("Commencer l'examen"):
         initialize_questions()
 
-if st.session_state['exam_started'] and not st.session_state['exam_finished']:
+elif not st.session_state['exam_finished']:
     show_all_questions()
     if st.button("Valider l'examen"):
         st.session_state['exam_finished'] = True
-        st.session_state['correct_count'] = st.session_state['correct_a'] + st.session_state['correct_c']
+        show_results()
 
-if st.session_state['exam_finished']:
-    show_results()
+elif st.session_state['exam_finished']:
     if st.button("Faire un autre examen blanc"):
         restart_exam()
