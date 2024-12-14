@@ -154,18 +154,19 @@ def show_results():
 
 # Fonction pour recommencer un examen
 def restart_exam():
-    if st.button("Faire un autre examen blanc"):
-        st.session_state['correct_count'] = 0
-        st.session_state['correct_a'] = 0
-        st.session_state['correct_c'] = 0
-        st.session_state['responses_a'] = []
-        st.session_state['responses_c'] = []
-        st.session_state['shuffled_questions'] = []
-        initialize_questions()
+    st.session_state['correct_count'] = 0
+    st.session_state['correct_a'] = 0
+    st.session_state['correct_c'] = 0
+    st.session_state['responses_a'] = []
+    st.session_state['responses_c'] = []
+    st.session_state['shuffled_questions'] = []
+    initialize_questions()
 
 # Lancer l'examen
 if st.button("Commencer l'examen"):
     show_all_questions()
-    if st.button("Valider l'examen"):
-        show_results()
+
+if st.button("Valider l'examen"):
+    show_results()
+    if st.button("Faire un autre examen blanc"):
         restart_exam()
