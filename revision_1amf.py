@@ -15,17 +15,19 @@ if not username:
 # Générer un fichier spécifique pour l'utilisateur
 used_questions_file = f"used_questions_{username}.json"
 
-# Charger les données directement depuis un fichier inclus dans le projet
-file_path = "AMF.csv"  # Le fichier doit être dans le même dossier
+# Charger le fichier CSV
+file_path = "AMF.csv"  # Chemin vers le fichier CSV
 try:
     data = pd.read_csv(file_path, encoding="ISO-8859-1", on_bad_lines="skip", delimiter=";")
+    # Normaliser les noms des colonnes
+    data.columns = data.columns.str.strip()
     # Vérifier que toutes les colonnes nécessaires sont présentes
     required_columns = ['Categorie', 'Question finale', 'Choix_A', 'Choix_B', 'Choix_C', 'Reponse']
     if not all(col in data.columns for col in required_columns):
-        st.error("Les colonnes attendues dans le fichier sont manquantes ou mal formatées.")
+        st.error(f"Colonnes manquantes ou mal formatées. Colonnes actuelles : {list(data.columns)}")
         st.stop()
 except FileNotFoundError:
-    st.error(f"Le fichier {file_path} est introuvable. Assurez-vous qu'il est dans le même dossier que ce script.")
+    st.error("Le fichier CSV est introuvable.")
     st.stop()
 except Exception as e:
     st.error(f"Une erreur est survenue lors du chargement du fichier : {e}")
@@ -105,53 +107,65 @@ def show_all_questions():
         elif question.get('Categorie') == 'C':
             st.session_state['responses_c'].append(response_record)
 
-# Fonction pour afficher les résultats détaillés
+# Fonction pour afficher le récapitulatif des résultats
 def show_results():
-    st.write("### Résultats détaillés")
-    
-    # Résultats pour Catégorie A
+    st.write("### Résultats de l'examen")
+    st.write(f"- **Catégorie A :** {st.session_state['correct_a']} bonnes réponses sur 33.")
+    st.write(f"- **Catégorie C :** {st.session_state['correct_c']} bonnes réponses sur 87.")
+    st.write(f"- **Score total :** {st.session_state['correct_count']} bonnes réponses sur 120.")
+
+    pourcentage_a = (st.session_state['correct_a'] / 33) * 100
+    pourcentage_c = (st.session_state['correct_c'] / 87) * 100
+    st.write(f"- **Pourcentage Catégorie A :** {pourcentage_a:.2f}%")
+    st.write(f"- **Pourcentage Catégorie C :** {pourcentage_c:.2f}%")
+
+    if pourcentage_a >= 80 and pourcentage_c >= 80:
+        st.success("Félicitations ! Vous avez réussi l'examen.")
+    else:
+        st.error("Désolé, vous n'avez pas réussi. Vous devez atteindre au moins 80% dans chaque catégorie.")
+
+    st.write("### Détails des réponses")
+
     st.write("#### Catégorie A")
     for response in st.session_state['responses_a']:
-        st.write(f"- **Question :** {response['question']}")
-        st.write(f"  - **Votre réponse :** {response['your_answer']}")
-        st.write(f"  - **Bonne réponse :** {response['correct_answer']}")
+        st.write(f"**Question :** {response['question']}")
+        st.write(f"- A) {response['choices']['A']}")
+        st.write(f"- B) {response['choices']['B']}")
+        st.write(f"- C) {response['choices']['C']}")
+        st.write(f"- **Votre réponse :** {response['your_answer']} - **Réponse correcte :** {response['correct_answer']}")
         if response['is_correct']:
             st.success("Bonne réponse")
         else:
             st.error("Mauvaise réponse")
+        st.write("---")
 
-    # Résultats pour Catégorie C
     st.write("#### Catégorie C")
     for response in st.session_state['responses_c']:
-        st.write(f"- **Question :** {response['question']}")
-        st.write(f"  - **Votre réponse :** {response['your_answer']}")
-        st.write(f"  - **Bonne réponse :** {response['correct_answer']}")
+        st.write(f"**Question :** {response['question']}")
+        st.write(f"- A) {response['choices']['A']}")
+        st.write(f"- B) {response['choices']['B']}")
+        st.write(f"- C) {response['choices']['C']}")
+        st.write(f"- **Votre réponse :** {response['your_answer']} - **Réponse correcte :** {response['correct_answer']}")
         if response['is_correct']:
             st.success("Bonne réponse")
         else:
             st.error("Mauvaise réponse")
+        st.write("---")
 
-# Fonction pour terminer l'examen
-def finish_exam():
-    st.write("### Examen terminé !")
-    st.write(f"- Catégorie A : {st.session_state['correct_a']} / 33 ({(st.session_state['correct_a'] / 33) * 100:.2f}%)")
-    st.write(f"- Catégorie C : {st.session_state['correct_c']} / 87 ({(st.session_state['correct_c'] / 87) * 100:.2f}%)")
-    st.write(f"- **Score total** : {st.session_state['correct_count']} / 120")
-
-    # Vérifier si l'utilisateur a réussi
-    passed_a = (st.session_state['correct_a'] / 33) >= 0.8
-    passed_c = (st.session_state['correct_c'] / 87) >= 0.8
-
-    if passed_a and passed_c:
-        st.success("Vous avez réussi l'examen !")
-    else:
-        st.error("Vous n'avez pas atteint le seuil requis de 80% dans une ou plusieurs catégories.")
-
-    # Afficher les résultats détaillés
-    show_results()
+# Fonction pour recommencer un examen
+def restart_exam():
+    if st.button("Faire un autre examen blanc"):
+        st.session_state['correct_count'] = 0
+        st.session_state['correct_a'] = 0
+        st.session_state['correct_c'] = 0
+        st.session_state['responses_a'] = []
+        st.session_state['responses_c'] = []
+        st.session_state['shuffled_questions'] = []
+        initialize_questions()
 
 # Lancer l'examen
 if st.button("Commencer l'examen"):
     show_all_questions()
     if st.button("Valider l'examen"):
-        finish_exam()
+        show_results()
+        restart_exam()
