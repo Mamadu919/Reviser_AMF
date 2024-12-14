@@ -28,9 +28,9 @@ except Exception as e:
 
 # Filtrer les questions par catégorie
 try:
-    category_a = data[data.iloc[:, 3] == 'A']  # Colonne d'index 3 pour la catégorie
-    category_c = data[data.iloc[:, 3] == 'C']
-except IndexError:
+    category_a = data[data['Categorie'] == 'A']  # Utilise la colonne 'Categorie'
+    category_c = data[data['Categorie'] == 'C']
+except KeyError:
     st.error("Les colonnes attendues dans le fichier sont manquantes ou mal formatées.")
     st.stop()
 
@@ -59,8 +59,8 @@ if 'shuffled_questions' not in st.session_state:
 
 # Tirer toutes les questions au démarrage de l'examen
 def initialize_questions():
-    available_a = category_a[~category_a.iloc[:, 0].isin(st.session_state['used_questions'])]
-    available_c = category_c[~category_c.iloc[:, 0].isin(st.session_state['used_questions'])]
+    available_a = category_a[~category_a['Question finale'].isin(st.session_state['used_questions'])]
+    available_c = category_c[~category_c['Question finale'].isin(st.session_state['used_questions'])]
 
     questions_a = available_a.sample(n=min(len(available_a), 33), random_state=1).to_dict(orient='records')
     questions_c = available_c.sample(n=min(len(available_c), 87), random_state=1).to_dict(orient='records')
@@ -73,7 +73,7 @@ if not st.session_state['shuffled_questions']:
 # Fonction pour afficher toutes les questions directement
 def show_all_questions():
     for i, question in enumerate(st.session_state['shuffled_questions']):
-        st.write(f"**Question {i + 1}: {question.get('Question', 'Question manquante')}**")
+        st.write(f"**Question {i + 1}: {question.get('Question finale', 'Question manquante')}**")
         st.write(f"A) {question.get('Choix_A', 'Option manquante')}")
         st.write(f"B) {question.get('Choix_B', 'Option manquante')}")
         st.write(f"C) {question.get('Choix_C', 'Option manquante')}")
@@ -89,7 +89,7 @@ def show_all_questions():
                 st.session_state['correct_c'] += 1
 
         response_record = {
-            "question": question.get('Question', 'Question manquante'),
+            "question": question.get('Question finale', 'Question manquante'),
             "choices": {
                 "A": question.get('Choix_A', 'Option manquante'),
                 "B": question.get('Choix_B', 'Option manquante'),
