@@ -50,10 +50,8 @@ if 'correct_a' not in st.session_state:
     st.session_state['correct_a'] = 0
 if 'correct_c' not in st.session_state:
     st.session_state['correct_c'] = 0
-if 'responses_a' not in st.session_state:
-    st.session_state['responses_a'] = []
-if 'responses_c' not in st.session_state:
-    st.session_state['responses_c'] = []
+if 'responses' not in st.session_state:
+    st.session_state['responses'] = []
 if 'shuffled_questions' not in st.session_state:
     st.session_state['shuffled_questions'] = []
 
@@ -69,7 +67,7 @@ def initialize_questions():
     st.session_state['exam_started'] = True
     st.session_state['exam_finished'] = False
 
-# Fonction pour afficher les questions
+# Fonction pour afficher toutes les questions directement
 def show_all_questions():
     for i, question in enumerate(st.session_state['shuffled_questions']):
         st.write(f"**Question {i + 1}: {question.get('Question finale', 'Question manquante')}**")
@@ -91,10 +89,12 @@ def show_all_questions():
             "is_correct": answer == question.get('Reponse', '')
         }
 
-        if question.get('Categorie') == 'A':
-            st.session_state['responses_a'].append(response_record)
-        elif question.get('Categorie') == 'C':
-            st.session_state['responses_c'].append(response_record)
+        if question.get('Categorie') == 'A' and response_record["is_correct"]:
+            st.session_state['correct_a'] += 1
+        elif question.get('Categorie') == 'C' and response_record["is_correct"]:
+            st.session_state['correct_c'] += 1
+
+        st.session_state['responses'].append(response_record)
 
 # Fonction pour afficher les résultats
 def show_results():
@@ -103,21 +103,39 @@ def show_results():
     st.write(f"- **Catégorie C :** {st.session_state['correct_c']} bonnes réponses sur 87.")
     st.write(f"- **Score total :** {st.session_state['correct_count']} bonnes réponses sur 120.")
 
-    for response in st.session_state['responses_a'] + st.session_state['responses_c']:
-        if response["is_correct"]:
-            st.success(f"Bonne réponse : {response['question']}")
+    pourcentage_a = (st.session_state['correct_a'] / 33) * 100
+    pourcentage_c = (st.session_state['correct_c'] / 87) * 100
+    st.write(f"- **Pourcentage Catégorie A :** {pourcentage_a:.2f}%")
+    st.write(f"- **Pourcentage Catégorie C :** {pourcentage_c:.2f}%")
+
+    if pourcentage_a >= 80 and pourcentage_c >= 80:
+        st.success("Félicitations ! Vous avez réussi l'examen.")
+    else:
+        st.error("Désolé, vous n'avez pas réussi. Vous devez atteindre au moins 80% dans chaque catégorie.")
+
+    st.write("### Détails des réponses")
+
+    for response in st.session_state['responses']:
+        st.write(f"**Question :** {response['question']}")
+        st.write(f"- A) {response['choices']['A']}")
+        st.write(f"- B) {response['choices']['B']}")
+        st.write(f"- C) {response['choices']['C']}")
+        st.write(f"- **Votre réponse :** {response['your_answer']} - **Réponse correcte :** {response['correct_answer']}")
+        if response['is_correct']:
+            st.success("Bonne réponse")
         else:
-            st.error(f"Mauvaise réponse : {response['question']} (Correct : {response['correct_answer']})")
+            st.error("Mauvaise réponse")
+        st.write("---")
 
 # Fonction pour recommencer
+
 def restart_exam():
     st.session_state['exam_started'] = False
     st.session_state['exam_finished'] = False
     st.session_state['correct_count'] = 0
     st.session_state['correct_a'] = 0
     st.session_state['correct_c'] = 0
-    st.session_state['responses_a'] = []
-    st.session_state['responses_c'] = []
+    st.session_state['responses'] = []
     st.session_state['shuffled_questions'] = []
 
 # Workflow de l'application
@@ -129,6 +147,7 @@ if st.session_state['exam_started'] and not st.session_state['exam_finished']:
     show_all_questions()
     if st.button("Valider l'examen"):
         st.session_state['exam_finished'] = True
+        st.session_state['correct_count'] = st.session_state['correct_a'] + st.session_state['correct_c']
 
 if st.session_state['exam_finished']:
     show_results()
