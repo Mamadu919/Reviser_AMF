@@ -16,10 +16,16 @@ if not username:
 file_path = "AMF.csv"  # Chemin vers le fichier CSV
 try:
     data = pd.read_csv(file_path, encoding="ISO-8859-1", on_bad_lines="skip", delimiter=";")
+    
+    # Normaliser les noms de colonnes pour éliminer les espaces et vérifier la conformité
+    data.columns = data.columns.str.strip()
+    st.write("Colonnes disponibles dans le fichier : ", list(data.columns))  # Afficher les colonnes disponibles
+    
     # Vérifier que toutes les colonnes nécessaires sont présentes
     required_columns = ['Categorie', 'Question finale', 'Choix_A', 'Choix_B', 'Choix_C', 'Reponse']
     if not all(col in data.columns for col in required_columns):
-        st.error("Les colonnes attendues dans le fichier sont manquantes ou mal formatées.")
+        missing_cols = [col for col in required_columns if col not in data.columns]
+        st.error(f"Colonnes manquantes ou mal formatées : {missing_cols}")
         st.stop()
 except FileNotFoundError:
     st.error(f"Le fichier {file_path} est introuvable. Assurez-vous qu'il est dans le même dossier que ce script.")
@@ -43,14 +49,20 @@ else:
 # Initialiser les états de session
 if 'used_questions' not in st.session_state:
     st.session_state['used_questions'] = used_questions
-if 'shuffled_questions' not in st.session_state:
-    st.session_state['shuffled_questions'] = []
-if 'responses' not in st.session_state:
-    st.session_state['responses'] = []
 if 'correct_count' not in st.session_state:
     st.session_state['correct_count'] = 0
+if 'correct_a' not in st.session_state:
+    st.session_state['correct_a'] = 0
+if 'correct_c' not in st.session_state:
+    st.session_state['correct_c'] = 0
+if 'responses_a' not in st.session_state:
+    st.session_state['responses_a'] = []
+if 'responses_c' not in st.session_state:
+    st.session_state['responses_c'] = []
+if 'shuffled_questions' not in st.session_state:
+    st.session_state['shuffled_questions'] = []
 
-# Tirer 33 questions de catégorie A et 87 de catégorie C
+# Tirer toutes les questions au démarrage de l'examen
 def initialize_questions():
     available_a = category_a[~category_a['Question finale'].isin(st.session_state['used_questions'])]
     available_c = category_c[~category_c['Question finale'].isin(st.session_state['used_questions'])]
@@ -59,51 +71,48 @@ def initialize_questions():
         st.error("Pas assez de questions disponibles dans les catégories.")
         st.stop()
 
-    questions_a = available_a.sample(n=33, random_state=1)
-    questions_c = available_c.sample(n=87, random_state=1)
+    questions_a = available_a.sample(n=33, random_state=1).to_dict(orient='records')
+    questions_c = available_c.sample(n=87, random_state=1).to_dict(orient='records')
 
-    st.session_state['shuffled_questions'] = pd.concat([questions_a, questions_c]).sample(frac=1, random_state=1)
+    st.session_state['shuffled_questions'] = random.sample(questions_a + questions_c, len(questions_a + questions_c))
 
 if not st.session_state['shuffled_questions']:
     initialize_questions()
 
-# Afficher les questions
-st.write("### Répondez aux questions suivantes :")
-for idx, question in st.session_state['shuffled_questions'].iterrows():
-    st.write(f"**Question {idx + 1}: {question['Question finale']}**")
-    st.write(f"A) {question['Choix_A']}")
-    st.write(f"B) {question['Choix_B']}")
-    st.write(f"C) {question['Choix_C']}")
-    st.radio("Votre réponse :", ["A", "B", "C"], key=f"question_{idx}")
+# Fonction pour afficher toutes les questions directement
+def show_all_questions():
+    for i, question in enumerate(st.session_state['shuffled_questions']):
+        st.write(f"**Question {i + 1}: {question.get('Question finale', 'Question manquante')}**")
+        st.write(f"A) {question.get('Choix_A', 'Option manquante')}")
+        st.write(f"B) {question.get('Choix_B', 'Option manquante')}")
+        st.write(f"C) {question.get('Choix_C', 'Option manquante')}")
 
-# Bouton pour valider les réponses
-if st.button("Valider"):
-    st.session_state['correct_count'] = 0
-    st.session_state['responses'] = []
+        answer = st.radio("Votre réponse :", ["A", "B", "C"], key=f"question_{i + 1}")
 
-    # Vérifier chaque réponse et calculer les résultats
-    for idx, question in st.session_state['shuffled_questions'].iterrows():
-        user_answer = st.session_state.get(f"question_{idx}", None)
-        correct_answer = question['Reponse']
-
-        is_correct = user_answer == correct_answer
+        is_correct = answer == question.get('Reponse', '')
         if is_correct:
             st.session_state['correct_count'] += 1
+            if question.get('Categorie') == 'A':
+                st.session_state['correct_a'] += 1
+            elif question.get('Categorie') == 'C':
+                st.session_state['correct_c'] += 1
 
-        st.session_state['responses'].append({
-            "question": question['Question finale'],
-            "user_answer": user_answer,
-            "correct_answer": correct_answer,
+        response_record = {
+            "question": question.get('Question finale', 'Question manquante'),
+            "choices": {
+                "A": question.get('Choix_A', 'Option manquante'),
+                "B": question.get('Choix_B', 'Option manquante'),
+                "C": question.get('Choix_C', 'Option manquante')
+            },
+            "your_answer": answer,
+            "correct_answer": question.get('Reponse', 'Réponse manquante'),
             "is_correct": is_correct
-        })
+        }
+        if question.get('Categorie') == 'A':
+            st.session_state['responses_a'].append(response_record)
+        elif question.get('Categorie') == 'C':
+            st.session_state['responses_c'].append(response_record)
 
-    # Afficher les résultats
-    st.write("### Résultats")
-    st.write(f"Score total : {st.session_state['correct_count']} / {len(st.session_state['shuffled_questions'])}")
-    for response in st.session_state['responses']:
-        st.write(f"**Question :** {response['question']}")
-        st.write(f"Votre réponse : {response['user_answer']} | Réponse correcte : {response['correct_answer']}")
-        if response['is_correct']:
-            st.success("Bonne réponse")
-        else:
-            st.error("Mauvaise réponse")
+# Lancer l'examen
+if st.button("Commencer l'examen"):
+    show_all_questions()
