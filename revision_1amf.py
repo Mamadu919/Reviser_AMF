@@ -60,14 +60,18 @@ def initialize_questions():
     available_a = category_a[~category_a['Question finale'].isin(st.session_state['used_questions'])]
     available_c = category_c[~category_c['Question finale'].isin(st.session_state['used_questions'])]
 
-    questions_a = available_a.sample(n=min(len(available_a), 33), random_state=1).to_dict(orient='records')
-    questions_c = available_c.sample(n=min(len(available_c), 87), random_state=1).to_dict(orient='records')
+    if len(available_a) < 33 or len(available_c) < 87:
+        st.error("Pas assez de questions disponibles dans les catégories pour créer un nouvel examen.")
+        st.stop()
 
-    st.session_state['shuffled_questions'] = random.sample(questions_a + questions_c, len(questions_a + questions_c))
+    questions_a = available_a.sample(n=33, random_state=1).to_dict(orient='records')
+    questions_c = available_c.sample(n=87, random_state=1).to_dict(orient='records')
+
+    st.session_state['shuffled_questions'] = random.sample(questions_a + questions_c, 120)
     st.session_state['exam_started'] = True
     st.session_state['exam_finished'] = False
 
-# Fonction pour afficher toutes les questions directement
+# Fonction pour afficher toutes les questions
 def show_all_questions():
     for i, question in enumerate(st.session_state['shuffled_questions']):
         st.write(f"**Question {i + 1}: {question.get('Question finale', 'Question manquante')}**")
