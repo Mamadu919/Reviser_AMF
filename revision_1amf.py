@@ -117,6 +117,8 @@ def validate_exam():
         elif question.get('Categorie') == 'C' and response_record["is_correct"]:
             st.session_state['correct_c'] += 1
 
+        st.session_state['used_questions'].add(question['Question finale'])
+
     st.session_state['correct_count'] = st.session_state['correct_a'] + st.session_state['correct_c']
     st.session_state['exam_finished'] = True
     save_used_questions()
@@ -155,6 +157,10 @@ def show_results():
 def restart_exam():
     st.session_state['exam_started'] = False
     st.session_state['exam_finished'] = False
+    st.session_state['correct_count'] = 0
+    st.session_state['correct_a'] = 0
+    st.session_state['correct_c'] = 0
+    st.session_state['responses'] = []
     st.session_state['shuffled_questions'] = []
 
 # Workflow de l'application
